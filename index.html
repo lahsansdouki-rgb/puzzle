@@ -819,11 +819,6 @@ $('profileAvatarInput').onchange=e=>{
  };
  reader.onerror=()=>toast('تعذّر تحميل الصورة');reader.readAsDataURL(file);
 };
-$('profileBtn').onclick=()=>{
- const box=$('profileBox'),opening=box.style.display!=='block';
- box.style.display=opening?'block':'none';
- if(opening){renderProfile();box.scrollIntoView({behavior:'smooth',block:'nearest'})}
-};
 $('saveProfile').onclick=()=>{profile.name=$('playerName').value.trim().slice(0,18)||'لاعب جديد';ls.set(profileKey,profile);$('playerName').value=profile.name;renderProfile();toast('تم حفظ ملف اللاعب على هذا الجهاز')};
 $('soundToggle').textContent='المؤثرات: '+(soundOn?'مفعّلة':'متوقفة');
 $('soundToggle').onclick=()=>{audioReady();soundOn=!soundOn;ls.set('pz-sound',soundOn);$('soundToggle').textContent='المؤثرات: '+(soundOn?'مفعّلة':'متوقفة')};
@@ -846,7 +841,7 @@ function undoMove(){if(!undoStack.length||done)return;const p=undoStack.pop();p.
 function redoMove(){if(!redoStack.length||done)return;const p=redoStack.pop();p.classList.add('l');p.style.left=p.dataset.tx+'px';p.style.top=p.dataset.ty+'px';p.style.transform='';p.style.zIndex=0;placed++;todayCount++;ls.set('pz-count-'+today,todayCount);undoStack.push(p);updateProgressUI();if(placed===pieces.length)win()}
 $('undoBtn').onclick=undoMove;$('redoBtn').onclick=redoMove;
 $('hintBtn').onclick=()=>{if(done||phase!==1){toast('ابدأ اللعب أولاً للحصول على تلميح');return}if(hintUsed){toast('استخدمت التلميح في هذه المحاولة؛ أعد المحاولة للحصول على تلميح جديد');return}hintUsed=true;hintCount++;$('hintBtn').disabled=true;const gh=$('ghost');gh.style.opacity='.72';toast('💡 هذا هو التلميح الوحيد لهذه المحاولة');setTimeout(()=>{if(!done)gh.style.opacity=0},2200)};
-$('statsBtn').onclick=()=>{const pb=$('profileBox');pb.style.display=pb.style.display==='none'?'block':'none';pb.innerHTML='<strong><svg class="ui-icon"><use href="#i-user"/></svg> ملف اللاعب</strong><br>الاسم: '+escapeText(profile.name||'لاعب جديد')+'<br>'+'<br>إحصائياتك محفوظة على هذا الجهاز.';const box=$('achievementBox');box.style.display=box.style.display==='none'?'block':'none';const best=Object.values(extraStats.best||{}).filter(Boolean).sort((a,b)=>a-b)[0];box.innerHTML=badgesHTML(best)};
+$('statsBtn').onclick=()=>{const pb=$('profileBox'),opening=pb.style.display!=='block';pb.style.display=opening?'block':'none';if(opening)renderProfile();const box=$('achievementBox');box.style.display=box.style.display==='none'?'block':'none';const best=Object.values(extraStats.best||{}).filter(Boolean).sort((a,b)=>a-b)[0];box.innerHTML=badgesHTML(best)};
 function streakNow(){const d=new Date().toISOString().slice(0,10),y=new Date(Date.now()-86400000).toISOString().slice(0,10);return extraStats.lastDay===d||extraStats.lastDay===y?(extraStats.streak||0):0}
 function renderMeta(){const sn=$('stNum');if(!sn)return;sn.textContent=streakNow();const days=extraStats.days||[],wk=$('wk'),nm=['ح','ن','ث','ر','خ','ج','س'];wk.innerHTML='';
 for(let i=6;i>=0;i--){const dt=new Date(Date.now()-i*86400000),e=document.createElement('i');e.textContent=nm[dt.getDay()];if(days.includes(dt.toISOString().slice(0,10)))e.className='on';if(i===0)e.classList.add('td');wk.appendChild(e)}
@@ -915,8 +910,8 @@ const lg=await new Promise(r=>{const i=new Image();i.onload=()=>r(i);i.onerror=(
 g.save();g.shadowColor='#000';g.shadowBlur=30;g.drawImage($('ghost'),220,490,640,640);g.restore();g.strokeStyle='#f5c451';g.lineWidth=6;g.strokeRect(220,490,640,640);
 const P=new Path2D('M12 2.5l2.9 6 6.6.9-4.8 4.6 1.2 6.5L12 17.4l-5.9 3.1 1.2-6.5L2.5 9.4l6.6-.9z');
 for(let i=0;i<3;i++){g.save();g.translate(380+i*130,1150);g.scale(5,5);g.fillStyle=i<lastSt?'#f5c451':'#ffffff18';g.fill(P);g.lineWidth=.4;g.strokeStyle='#fff1b8';g.stroke(P);g.restore()}
-g.fillStyle='#ffe9b0';g.textAlign='center';g.font='bold 52px Tajawal,sans-serif';g.fillText(T(lvName()+' · '+fm(lastEl)),W2/2,1300);
-const blob=await new Promise(r=>c.toBlob(r,'image/jpeg',.9)),file=new File([blob],'puzzle-bypoints.jpg',{type:'image/jpeg'}),txt=T('أكملت لوحة '+lvName()+' في '+fm(lastEl))+' - Puzzle ByPoints';
+g.fillStyle='#ffe9b0';g.textAlign='center';g.font='bold 52px Tajawal,sans-serif';g.fillText(translateUIString(lvName()+' · '+fm(lastEl)),W2/2,1300);
+const blob=await new Promise(r=>c.toBlob(r,'image/jpeg',.9)),file=new File([blob],'puzzle-bypoints.jpg',{type:'image/jpeg'}),txt=translateUIString('أكملت لوحة '+lvName()+' في '+fm(lastEl))+' - Puzzle ByPoints';
 if(navigator.canShare&&navigator.canShare({files:[file]})){await navigator.share({files:[file],text:txt});return}
 if(navigator.share){await navigator.share({text:txt});return}
 await navigator.clipboard.writeText(txt);toast('تم نسخ النتيجة')}catch(e){if(!e||e.name!=='AbortError')toast('تعذّرت المشاركة')}};
@@ -1136,7 +1131,7 @@ const I18N_PAT=[["بعد الضغط على «ابدأ اللعب» ستظهر ا
 
 let LANG=ls.get('pz-lang','ar');if(!['ar','fr','en'].includes(LANG))LANG='ar';
 const AR_RE=/[؀-ۿ]/,TITLE_AR=document.title,LANG_I=LANG==='fr'?1:2;
-function T(str){
+function translateUIString(str){
   if(LANG==='ar'||typeof str!=='string')return str;const col=LANG==='fr'?1:2;
   const tr=str.trim();for(const e of I18N_EXACT){if(tr===e[0])return str.replace(e[0],e[col])}
   let out=str;
@@ -1146,18 +1141,18 @@ function T(str){
 function trNode(n){let orig;
   if(n._tr!==undefined&&n.nodeValue===n._tr)orig=n._ar;
   else{orig=n.nodeValue;n._ar=undefined;n._tr=undefined;if(!AR_RE.test(orig))return;n._ar=orig}
-  const out=T(orig);if(out!==n.nodeValue)n.nodeValue=out;n._tr=out!==orig?out:undefined}
+  const out=translateUIString(orig);if(out!==n.nodeValue)n.nodeValue=out;n._tr=out!==orig?out:undefined}
 const TR_ATTRS=['aria-label','title','placeholder','alt'];
 function trAttr(el){if(!el.hasAttribute)return;for(const a of TR_ATTRS){if(!el.hasAttribute(a))continue;const key='_a_'+a,cur=el.getAttribute(a),rec=el[key];let orig;
   if(rec&&rec.tr===cur)orig=rec.ar;else{if(!AR_RE.test(cur)){el[key]=undefined;continue}orig=cur}
-  const out=T(orig);if(out!==cur)el.setAttribute(a,out);el[key]={ar:orig,tr:out}}}
+  const out=translateUIString(orig);if(out!==cur)el.setAttribute(a,out);el[key]={ar:orig,tr:out}}}
 function trTree(root){if(root.nodeType===3){trNode(root);return}if(root.nodeType!==1)return;const g=root.tagName;if(g==='SCRIPT'||g==='STYLE')return;trAttr(root);for(let c=root.firstChild;c;c=c.nextSibling)trTree(c)}
 new MutationObserver(ms=>{if(LANG==='ar')return;for(const m of ms){
   if(m.type==='childList')m.addedNodes.forEach(trTree);
   else if(m.type==='characterData')trNode(m.target);
   else if(m.type==='attributes')trAttr(m.target)}}).observe(document.body,{childList:true,subtree:true,characterData:true,attributes:true,attributeFilter:TR_ATTRS});
 function setLang(l){LANG=l;ls.set('pz-lang',l);const h=document.documentElement;h.lang=l;h.dir=l==='ar'?'rtl':'ltr';
-  trTree(document.body);document.title=T(TITLE_AR);
+  trTree(document.body);document.title=translateUIString(TITLE_AR);
   document.querySelectorAll('#langSeg button').forEach(b=>{const on=b.dataset.l===l;b.classList.toggle('on',on);b.setAttribute('aria-pressed',on)})}
 document.querySelectorAll('#langSeg button').forEach(b=>b.onclick=()=>setLang(b.dataset.l));
 setLang(LANG);
